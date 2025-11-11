@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: vprofileapp-rohith
-  EKS_CLUSTER: vprofile-eks
+  EKS_CLUSTER: vprofileapp-rohith
 
 jobs:
   Testing:
