@@ -96,6 +96,6 @@ jobs:
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/vprofilecharts -n default --timeout=5m
-          kubectl get svc -n default -l app=vprofilecharts
+          kubectl rollout status deployment/vproapp -n default --timeout=5m
+          kubectl get svc -n default -l app=vproapp
           echo "Application is now available at the ELB DNS endpoint"
