@@ -89,10 +89,13 @@ jobs:
 
       - name: Login to ECR
         run: |
+          # Create or update image pull secret 'regcred' (idempotent)
+          aws_ecr_password=$(aws ecr get-login-password)
           kubectl create secret docker-registry regcred \
             --docker-server=${{ secrets.REGISTRY }} \
             --docker-username=AWS \
-            --docker-password=$(aws ecr get-login-password)
+            --docker-password="${aws_ecr_password}" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy Kubernetes manifests to EKS
         run: |

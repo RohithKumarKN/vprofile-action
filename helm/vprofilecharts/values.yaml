@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: "REPLACE_WITH_REGISTRY/vprofileapp-rohith"
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+db:
+  serviceName: vprodb
+
+cache:
+  serviceName: vprocache01

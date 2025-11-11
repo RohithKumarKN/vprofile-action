@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vprofilecharts.fullname" . }}
+  labels:
+    app: {{ include "vprofilecharts.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "vprofilecharts.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "vprofilecharts.name" . }}
+    spec:
+      containers:
+        - name: vproapp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+      initContainers:
+        - name: init-mydb
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nslookup {{ .Values.db.serviceName }}.{{ .Release.Namespace }}.svc.cluster.local; do echo waiting for mydb; sleep 2; done;
+        - name: init-memcache
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nslookup {{ .Values.cache.serviceName }}.{{ .Release.Namespace }}.svc.cluster.local; do echo waiting for memcache; sleep 2; done;

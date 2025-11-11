@@ -1,0 +1,25 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "vprofilecharts.fullname" . }}-ingress
+  annotations:
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+spec:
+  ingressClassName: nginx
+  rules:
+{{- range $host := .Values.ingress.hosts }}
+  - host: {{ $host.host }}
+    http:
+      paths:
+{{- range $p := $host.paths }}
+      - path: {{ $p.path }}
+        pathType: {{ $p.pathType }}
+        backend:
+          service:
+            name: {{ include "vprofilecharts.fullname" . }}
+            port:
+              number: {{ $.Values.service.port }}
+{{- end }}
+{{- end }}
+{{- end }}
