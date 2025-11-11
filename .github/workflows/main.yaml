@@ -84,6 +84,14 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
 
+      - name: Clean up old resources (if any)
+        run: |
+          # Delete old kubectl-applied resources to avoid Helm ownership conflicts
+          kubectl delete deployment vproapp -n default --ignore-not-found
+          kubectl delete service vproapp -n default --ignore-not-found
+          kubectl delete ingress vpro-ingress -n default --ignore-not-found
+          sleep 5
+
       - name: Deploy with Helm
         run: |
           helm upgrade --install vprofile-stack helm/vprofilecharts \
