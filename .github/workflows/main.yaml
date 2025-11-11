@@ -81,31 +81,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get Kube config file
+      - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
 
-      - name: Print config file
-        run: cat ~/.kube/config
-
-      - name: Login to ECR
+      - name: Deploy with Helm
         run: |
-          # Create or update image pull secret 'regcred' (idempotent)
-          aws_ecr_password=$(aws ecr get-login-password)
-          kubectl create secret docker-registry regcred \
-            --docker-server=${{ secrets.REGISTRY }} \
-            --docker-username=AWS \
-            --docker-password="${aws_ecr_password}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install vprofile-stack helm/vprofilecharts \
+            --create-namespace \
+            --namespace default \
+            --set image.repository=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }} \
+            --set image.tag=${{ github.run_number }} \
+            --wait \
+            --timeout 5m
 
-      - name: Deploy Kubernetes manifests to EKS
+      - name: Verify deployment
         run: |
-          # Build image reference used in manifests
-          IMAGE=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
-
-          # Prepare a temp dir and substitute Helm-style placeholders in the deployment
-          mkdir -p /tmp/k8s
-          sed "s|{{ values.appimage }}:{{ values.apptag }}|${IMAGE}|g" kubernetes/vpro-app/vproappdep.yml > /tmp/k8s/vproappdep.yml
-
-          # Copy other manifests (services, secrets, ingress, etc.) then apply
-          cp kubernetes/vpro-app/*.yml /tmp/k8s/ || true
-          kubectl apply -f /tmp/k8s/
+          kubectl rollout status deployment/vprofilecharts -n default --timeout=5m
+          kubectl get svc -n default -l app=vprofilecharts
+          echo "Application is now available at the ELB DNS endpoint"
