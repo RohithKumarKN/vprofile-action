@@ -86,11 +86,14 @@ jobs:
 
       - name: Clean up old resources (if any)
         run: |
-          # Delete old kubectl-applied resources to avoid Helm ownership conflicts
-          kubectl delete deployment vproapp -n default --ignore-not-found
-          kubectl delete service vproapp -n default --ignore-not-found
-          kubectl delete ingress vpro-ingress -n default --ignore-not-found
-          sleep 5
+          # Delete old kubectl-applied resources with force to avoid Helm ownership conflicts
+          kubectl delete deployment vproapp -n default --ignore-not-found --grace-period=0 --force 2>/dev/null || true
+          kubectl delete service vproapp -n default --ignore-not-found 2>/dev/null || true
+          kubectl delete service my-app -n default --ignore-not-found 2>/dev/null || true
+          kubectl delete ingress vpro-ingress -n default --ignore-not-found 2>/dev/null || true
+          # Delete any Helm release if it exists in a bad state
+          helm delete vprofile-stack -n default --ignore-not-found 2>/dev/null || true
+          sleep 10
 
       - name: Deploy with Helm
         run: |
